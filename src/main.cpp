@@ -9,7 +9,8 @@
 #define MESH_PASSWORD "somethingSneaky"
 #define MESH_PORT 5555
 
-// #define NodoSensor
+#define NodoSensor
+// #define NodoColector
 
 #define RXD2 16
 #define TXD2 17
@@ -27,50 +28,52 @@ void receivedCallback(uint32_t from, String &msg)
 {
   Serial.println(msg);
 
-#ifdef NodoSensor
-  StaticJsonDocument<200> doc;
-  doc["Nodo"] = "4";
-  doc["Valor"] = 55;
-  serializeJson(doc, Serial2);
-#else
+#ifdef NodoColector
   Serial2.println(msg);
-
 #endif
 }
 
 void newConnectionCallback(uint32_t nodeId)
 {
+#ifdef NodoColector
   Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+#endif
 }
 
 void changedConnectionCallback()
 {
+#ifdef NodoColector
+
   Serial.printf("Changed connections\n");
   String Nodos = mesh.subConnectionJson();
   Serial.println(Nodos);
+#endif
 }
 
 void nodeTimeAdjustedCallback(int32_t offset)
 {
-  Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
+  // Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
 }
 
 void setup()
 {
   Serial.begin(115200);
+#ifdef NodoColector
   Serial2.begin(115200, SERIAL_8N1, RXD2, TXD2);
+#endif
 
-  // mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE ); // all types on
   mesh.setDebugMsgTypes(ERROR | STARTUP); // set before init() so that you can see startup messages
   mesh.setContainsRoot(true);
   mesh.init(MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT);
   mesh.onReceive(&receivedCallback);
+
+#ifdef NodoColector
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+#endif
 
 #ifdef NodoSensor
-
   userScheduler.addTask(taskSendMessage);
   taskSendMessage.enable();
 #endif
@@ -89,8 +92,7 @@ void sendMessage()
   String msg;
   StaticJsonDocument<200> doc;
   doc["Nodo"] = "4";
-  doc["Valor"] = 55;
-  serializeJson(doc, Serial2);
+  doc["Valor"] = random(100);
   serializeJson(doc, msg);
   mesh.sendBroadcast(msg);
   taskSendMessage.setInterval(random(TASK_SECOND * 1, TASK_SECOND * 5));
