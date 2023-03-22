@@ -15,6 +15,8 @@
 #define RXD2 16
 #define TXD2 17
 
+std::list<uint32_t> nodes;
+
 Scheduler userScheduler; // to control your personal task
 painlessMesh mesh;
 
@@ -36,17 +38,38 @@ void receivedCallback(uint32_t from, String &msg)
 void newConnectionCallback(uint32_t nodeId)
 {
 #ifdef NodoColector
-  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+
+  // String msg;
+  // StaticJsonDocument<200> doc;
+  // doc["Tipo"] = "Alerta";
+  // doc["Mensaje"] = "Nueva conexión";
+  // doc["Valor"] = nodeId;
+  // serializeJson(doc, msg);
+  // Serial2.println(msg);
+
 #endif
 }
 
 void changedConnectionCallback()
 {
 #ifdef NodoColector
+  String msg;
+  StaticJsonDocument<100> doc;
+  doc["Tipo"] = "Alerta";
+  doc["Mensaje"] = "Cambio en la topología";
+  JsonArray data = doc.createNestedArray("Valor");
 
-  Serial.printf("Changed connections\n");
-  String Nodos = mesh.subConnectionJson();
-  Serial.println(Nodos);
+  nodes = mesh.getNodeList();
+  SimpleList<uint32_t>::iterator node = nodes.begin();
+  while (node != nodes.end())
+  {
+
+    data.add(*node);
+    node++;
+  }
+
+  serializeJson(doc, Serial2);
+
 #endif
 }
 
@@ -91,11 +114,12 @@ void sendMessage()
 {
   String msg;
   StaticJsonDocument<200> doc;
-  doc["Nodo"] = "4";
+  doc["Tipo"] = "Nodo";
+  doc["Mensaje"] = "4";
   doc["Valor"] = random(100);
   serializeJson(doc, msg);
   mesh.sendBroadcast(msg);
-  taskSendMessage.setInterval(random(TASK_SECOND * 1, TASK_SECOND * 5));
+  taskSendMessage.setInterval(random(TASK_SECOND * 5, TASK_SECOND * 10));
 }
 
 #endif
