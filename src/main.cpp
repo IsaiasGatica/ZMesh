@@ -115,7 +115,7 @@ void sendMessage()
   String msg;
   StaticJsonDocument<200> doc;
   doc["Tipo"] = "Nodo";
-  doc["Mensaje"] = "4";
+  doc["Mensaje"] = "2";
   doc["Valor"] = random(100);
   serializeJson(doc, msg);
   mesh.sendBroadcast(msg);
